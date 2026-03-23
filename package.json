@@ -1,0 +1,74 @@
+{
+  "name": "rev-eng-cursor-regex-mcp",
+  "version": "0.1.0",
+  "description": "Portable MCP server for indexed literal and regex search with sparse n-gram query planning.",
+  "type": "module",
+  "license": "MIT",
+  "private": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/blas0/rev-eng-cursor-regex-mcp.git"
+  },
+  "homepage": "https://github.com/blas0/rev-eng-cursor-regex-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/blas0/rev-eng-cursor-regex-mcp/issues"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "regex",
+    "search",
+    "indexing",
+    "typescript",
+    "cursor",
+    "claude"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "rev-eng-cursor-regex-mcp": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/mcp/server.d.ts",
+      "import": "./dist/mcp/server.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "AGENTS.md",
+    "CLAUDE.md"
+  ],
+  "scripts": {
+    "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\"",
+    "build": "npm run clean && tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "dev": "tsx src/cli.ts",
+    "start": "node dist/cli.js stdio",
+    "start:stdio": "node dist/cli.js stdio",
+    "start:http": "node dist/cli.js http --host 127.0.0.1 --port 3333",
+    "prepack": "npm run build",
+    "test": "vitest run",
+    "test:unit": "vitest run test/unit",
+    "test:integration": "vitest run test/integration",
+    "test:e2e": "vitest run test/e2e"
+  },
+  "dependencies": {
+    "@eslint-community/regexpp": "^4.12.2",
+    "@modelcontextprotocol/sdk": "^1.27.1",
+    "express": "^5.2.1",
+    "fast-glob": "^3.3.3",
+    "ignore": "^7.0.5",
+    "xxhash-wasm": "^1.1.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.5",
+    "@types/node": "^24.10.1",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.0"
+  }
+}
