@@ -2,7 +2,8 @@ import * as z from "zod/v4";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { clearIndex } from "../../core/index/manager.js";
-import { RuntimeConfig } from "../../core/shared/types.js";
+import { IndexClearResponse, RuntimeConfig } from "../../core/shared/types.js";
+import { indexClearResponseSchema } from "../schemas.js";
 
 function result<T extends object>(output: T): CallToolResult {
   return {
@@ -28,6 +29,7 @@ export function registerIndexClearTool(
         workspaceRoot: z.string().optional().describe("Absolute workspace root whose cache should be cleared. Defaults to the server workspace."),
         scope: z.enum(["overlay", "all"]).describe("Choose `overlay` to drop only the mutable layer or `all` to remove the entire local cache."),
       },
+      outputSchema: indexClearResponseSchema,
       annotations: {
         destructiveHint: true,
         openWorldHint: false,
@@ -40,12 +42,13 @@ export function registerIndexClearTool(
         indexDir: defaults.indexDir,
         scope: args.scope,
       });
-      return result({
+      const output: IndexClearResponse = {
         clearedScope: args.scope,
         removedPaths: cleared.removedPaths,
         storageDir: cleared.storageDir,
         elapsedMs: Date.now() - startedAt,
-      });
+      };
+      return result(output);
     },
   );
 }

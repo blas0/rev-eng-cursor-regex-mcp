@@ -6,6 +6,25 @@ import {
   RuntimeConfig,
 } from "./types.js";
 
+function resolveBoolean(
+  value: string | undefined,
+  defaultValue: boolean,
+): boolean {
+  if (value === undefined) {
+    return defaultValue;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  if (["0", "false", "no", "off"].includes(normalized)) {
+    return false;
+  }
+  if (["1", "true", "yes", "on"].includes(normalized)) {
+    return true;
+  }
+
+  return defaultValue;
+}
+
 /**
  * Resolve the runtime configuration from explicit overrides, environment variables, and defaults.
  */
@@ -23,6 +42,12 @@ export function resolveRuntimeConfig(
       process.env.REV_ENG_CURSOR_REGEX_MCP_INDEX_DIR ??
       workspaceRoot,
   );
+  const bootstrapGitignore =
+    overrides.bootstrapGitignore ??
+    resolveBoolean(
+      process.env.REV_ENG_CURSOR_REGEX_MCP_BOOTSTRAP_GITIGNORE,
+      true,
+    );
 
   const httpHost =
     overrides.httpHost ??
@@ -37,6 +62,7 @@ export function resolveRuntimeConfig(
   return {
     workspaceRoot,
     indexDir,
+    bootstrapGitignore,
     httpHost,
     httpPort,
   };

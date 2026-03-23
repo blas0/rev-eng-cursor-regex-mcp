@@ -1,6 +1,6 @@
 {
   "name": "rev-eng-cursor-regex-mcp",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Portable MCP server for indexed literal and regex search with sparse n-gram query planning.",
   "type": "module",
   "license": "MIT",

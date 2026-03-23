@@ -5,6 +5,7 @@
 ## Features
 
 - `index.ensure`, `index.status`, and `index.clear` for local index lifecycle management
+- Automatic `.gitignore` bootstrap for the local `.rev-eng-cursor-regex-mcp/` cache when that cache lives inside the workspace
 - `search.literal` for exact-string search
 - `search.regex` for ECMAScript regex search with sparse n-gram planning
 - `query.explain` for anchor extraction and fallback analysis
@@ -59,6 +60,7 @@ npx rev-eng-cursor-regex-mcp http --host 127.0.0.1 --port 3333
 
 - `REV_ENG_CURSOR_REGEX_MCP_WORKSPACE_ROOT`: default workspace root
 - `REV_ENG_CURSOR_REGEX_MCP_INDEX_DIR`: parent directory where `.rev-eng-cursor-regex-mcp/` is created
+- `REV_ENG_CURSOR_REGEX_MCP_BOOTSTRAP_GITIGNORE`: when set to `false`, `0`, `off`, or `no`, skip automatic `.gitignore` bootstrapping
 - `REV_ENG_CURSOR_REGEX_MCP_HTTP_HOST`: default HTTP bind host
 - `REV_ENG_CURSOR_REGEX_MCP_HTTP_PORT`: default HTTP bind port
 
@@ -90,5 +92,6 @@ npm run build
 ## Notes
 
 - Git workspaces use a commit-keyed base index plus a mutable overlay for working-tree changes.
+- `index.ensure` adds the cache directory to `.gitignore` automatically when the cache root lives inside the workspace. Pass `bootstrapGitignore: false` or set `REV_ENG_CURSOR_REGEX_MCP_BOOTSTRAP_GITIGNORE=false` to opt out.
 - Non-git workspaces fall back to snapshot mode with `.gitignore`-style filtering.
 - Ignore-case regex searches fall back to a deterministic full scan because the sparse index is case-sensitive.

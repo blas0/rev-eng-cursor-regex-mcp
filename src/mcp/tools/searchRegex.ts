@@ -3,6 +3,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { runRegexSearch } from "../../core/query/searchEngine.js";
 import { RuntimeConfig } from "../../core/shared/types.js";
+import { searchExecutionSchema } from "../schemas.js";
 
 function result<T extends object>(output: T): CallToolResult {
   return {
@@ -35,6 +36,7 @@ export function registerSearchRegexTool(
         autoEnsureIndex: z.boolean().optional().describe("Refresh the local index automatically before searching. Defaults to true."),
         includePlan: z.boolean().optional().describe("Include the query plan explanation in the structured result.")
       },
+      outputSchema: searchExecutionSchema,
       annotations: {
         readOnlyHint: true,
         openWorldHint: false,

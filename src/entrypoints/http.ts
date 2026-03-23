@@ -49,5 +49,9 @@ export async function runHttpServer(
   });
 
   const nodeServer = app.listen(config.httpPort, config.httpHost);
+  await new Promise<void>((resolve, reject) => {
+    nodeServer.once("listening", () => resolve());
+    nodeServer.once("error", reject);
+  });
   return nodeServer;
 }

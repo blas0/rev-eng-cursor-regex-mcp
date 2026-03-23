@@ -2,6 +2,7 @@ import * as z from "zod/v4";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { createQueryPlan } from "../../core/query/anchorExtraction.js";
+import { queryPlanSchema } from "../schemas.js";
 
 function result<T extends object>(output: T): CallToolResult {
   return {
@@ -24,6 +25,7 @@ export function registerQueryExplainTool(server: McpServer): void {
         pattern: z.string().describe("ECMAScript regular expression source without surrounding slashes."),
         flags: z.string().optional().describe("Optional ECMAScript regex flags."),
       },
+      outputSchema: queryPlanSchema,
       annotations: {
         readOnlyHint: true,
         openWorldHint: false,

@@ -21,6 +21,20 @@ describe("snapshot indexing", () => {
     const ensured = await ensureIndex({ workspaceRoot: workspace });
     expect(ensured.manifest.sourceMode).toBe("snapshot");
     expect(ensured.trackedFileCount).toBe(2);
+    expect(ensured.gitignoreEntry).toBe(".rev-eng-cursor-regex-mcp/");
+    expect(ensured.gitignoreUpdated).toBe(true);
+
+    const gitignore = await fs.readFile(path.join(workspace, ".gitignore"), "utf8");
+    expect(gitignore).toContain("ignored.txt");
+    expect(gitignore).toContain(".rev-eng-cursor-regex-mcp/");
+
+    const ensuredAgain = await ensureIndex({ workspaceRoot: workspace });
+    expect(ensuredAgain.gitignoreUpdated).toBe(false);
+
+    const gitignoreAgain = await fs.readFile(path.join(workspace, ".gitignore"), "utf8");
+    expect(
+      gitignoreAgain.match(/\.rev-eng-cursor-regex-mcp\//g)?.length ?? 0,
+    ).toBe(1);
 
     const status = await getIndexStatus({ workspaceRoot: workspace });
     expect(status.ready).toBe(true);

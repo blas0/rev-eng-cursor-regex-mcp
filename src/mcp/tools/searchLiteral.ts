@@ -3,6 +3,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { runLiteralSearch } from "../../core/query/searchEngine.js";
 import { RuntimeConfig } from "../../core/shared/types.js";
+import { searchExecutionSchema } from "../schemas.js";
 
 function result<T extends object>(output: T): CallToolResult {
   return {
@@ -34,6 +35,7 @@ export function registerSearchLiteralTool(
         afterLines: z.number().int().nonnegative().optional().describe("Number of context lines to include after each match. Defaults to 1."),
         autoEnsureIndex: z.boolean().optional().describe("Refresh the local index automatically before searching. Defaults to true.")
       },
+      outputSchema: searchExecutionSchema,
       annotations: {
         readOnlyHint: true,
         openWorldHint: false,

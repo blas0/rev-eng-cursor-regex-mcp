@@ -27,7 +27,12 @@ describe("git overlay indexing", () => {
 
     const ensured = await ensureIndex({ workspaceRoot: workspace });
     expect(ensured.manifest.sourceMode).toBe("git");
-    expect(ensured.overlayFileCount).toBe(1);
+    expect(ensured.overlayFileCount).toBe(2);
+    expect(ensured.gitignoreEntry).toBe(".rev-eng-cursor-regex-mcp/");
+    expect(ensured.gitignoreUpdated).toBe(true);
+
+    const gitignore = await fs.readFile(path.join(workspace, ".gitignore"), "utf8");
+    expect(gitignore).toContain(".rev-eng-cursor-regex-mcp/");
 
     const updated = await runLiteralSearch({
       workspaceRoot: workspace,
