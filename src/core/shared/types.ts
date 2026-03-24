@@ -12,10 +12,17 @@ export type PlannerMode =
   | "literal-covering"
   | "branch-covering"
   | "full-scan-fallback";
+export type SearchWorkflowTool =
+  | "index.ensure"
+  | "search.literal"
+  | "query.explain"
+  | "search.regex";
+export type SearchIntent = "exact-string" | "regex" | "unknown";
 
 export interface RuntimeConfig {
   workspaceRoot: string;
   indexDir: string;
+  bootstrapGitignore: boolean;
   httpHost: string;
   httpPort: number;
 }
@@ -99,6 +106,43 @@ export interface IndexBuildResult {
   storageDir: string;
   trackedFileCount: number;
   overlayFileCount: number;
+  gitignorePath: string | null;
+  gitignoreEntry: string | null;
+  gitignoreUpdated: boolean;
+}
+
+export interface IndexEnsureResponse {
+  workspaceId: string;
+  sourceMode: SourceMode;
+  sourceRevision: string;
+  baseIndexId: string;
+  overlayRevision: string;
+  trackedFileCount: number;
+  overlayFileCount: number;
+  storageDir: string;
+  gitignorePath: string | null;
+  gitignoreEntry: string | null;
+  gitignoreUpdated: boolean;
+  elapsedMs: number;
+}
+
+export interface IndexStatusResponse {
+  ready: boolean;
+  workspaceId: string;
+  sourceMode?: SourceMode;
+  sourceRevision?: string;
+  stalePaths: string[];
+  fileCount: number;
+  overlayFileCount: number;
+  byteSize: number;
+  storageDir: string;
+}
+
+export interface IndexClearResponse {
+  clearedScope: "overlay" | "all";
+  removedPaths: string[];
+  storageDir: string;
+  elapsedMs: number;
 }
 
 export interface SearchMatch {
@@ -149,6 +193,15 @@ export interface RegexSearchRequest extends SearchRequest {
   includePlan?: boolean;
 }
 
+export interface SearchPlanRequest {
+  workspaceRoot?: string;
+  indexDir?: string;
+  objective: string;
+  suspectedPattern?: string;
+  knownExactString?: string;
+  pathHints?: string[];
+}
+
 export interface QueryPlan {
   valid: boolean;
   normalizedPattern: string;
@@ -180,6 +233,34 @@ export interface InspectTermsResult {
   notes: string[];
 }
 
+export interface SuggestedLiteralArgs {
+  needle: string;
+  pathGlobs?: string[];
+  caseSensitive?: boolean;
+}
+
+export interface SuggestedRegexArgs {
+  pattern: string;
+  flags?: string;
+  pathGlobs?: string[];
+}
+
+export interface SuggestedExplainArgs {
+  pattern: string;
+  flags?: string;
+}
+
+export interface SearchPlanResponse {
+  mustEnsureIndex: boolean;
+  recommendedFirstTool: SearchWorkflowTool;
+  recommendedSequence: SearchWorkflowTool[];
+  suggestedLiteralArgs?: SuggestedLiteralArgs;
+  suggestedRegexArgs?: SuggestedRegexArgs;
+  suggestedExplainArgs?: SuggestedExplainArgs;
+  reasoning: string[];
+  fallbackPlan: string[];
+}
+
 export interface CorpusSelectionOptions {
   workspaceRoot: string;
   includeGlobs: string[];
@@ -189,6 +270,7 @@ export interface CorpusSelectionOptions {
 export interface EnsureIndexOptions {
   workspaceRoot?: string;
   indexDir?: string;
+  bootstrapGitignore?: boolean;
   forceRebuild?: boolean;
   includeGlobs?: string[];
   excludeGlobs?: string[];

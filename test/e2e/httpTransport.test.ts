@@ -7,42 +7,72 @@ import { runHttpServer } from "../../src/entrypoints/http.js";
 import { createTempWorkspace } from "../helpers/tempWorkspace.js";
 
 describe("http MCP transport", () => {
-  it("serves tools, resources, and prompts over /mcp", async () => {
+  it("serves tools, resources, prompts, and decision-tree guidance over /mcp", async () => {
     const workspace = await createTempWorkspace("rev-eng-cursor-regex-mcp-http");
     await fs.writeFile(path.join(workspace, "sample.txt"), "HTTP_SEARCH_TOKEN\n", "utf8");
 
-    const port = 34561;
     const server = await runHttpServer({
       workspaceRoot: workspace,
       httpHost: "127.0.0.1",
-      httpPort: port,
+      httpPort: 0,
     });
 
     try {
+      const address = server.address();
+      if (!address || typeof address === "string") {
+        throw new Error("HTTP test server did not expose a numeric port.");
+      }
+
       const client = new Client({
         name: "rev-eng-cursor-regex-mcp-http-client",
         version: "0.1.0",
       });
       const transport = new StreamableHTTPClientTransport(
-        new URL(`http://127.0.0.1:${port}/mcp`),
+        new URL(`http://127.0.0.1:${address.port}/mcp`),
       );
       await client.connect(transport);
 
       const tools = await client.listTools();
       const resources = await client.listResources();
+      const decisionTree = await client.readResource({
+        uri: "rev-eng-cursor-regex-mcp://docs/decision-tree",
+      });
       const prompt = await client.getPrompt({
         name: "investigate-with-rev-eng-cursor-regex-mcp",
-        arguments: { objective: "Find HTTP_SEARCH_TOKEN" },
+        arguments: { objective: "Find HTTP_SEARCH_TOKEN", intent: "exact-string" },
       });
 
       expect(tools.tools.some((tool) => tool.name === "index.ensure")).toBe(true);
+      expect(tools.tools.some((tool) => tool.name === "search.plan")).toBe(true);
+      expect(
+        tools.tools.some(
+          (tool) => tool.name === "index.ensure" && tool.outputSchema !== undefined,
+        ),
+      ).toBe(true);
       expect(
         resources.resources.some(
           (resource) =>
             resource.uri === "rev-eng-cursor-regex-mcp://docs/algorithms",
         ),
       ).toBe(true);
+      expect(
+        resources.resources.some(
+          (resource) =>
+            resource.uri === "rev-eng-cursor-regex-mcp://docs/decision-tree",
+        ),
+      ).toBe(true);
+      expect(decisionTree.contents[0]?.text).toMatch(/search\.plan/);
       expect(prompt.messages.length).toBeGreaterThan(0);
+
+      const plan = await client.callTool({
+        name: "search.plan",
+        arguments: {
+          workspaceRoot: workspace,
+          objective: "Find HTTP_SEARCH_TOKEN",
+          knownExactString: "HTTP_SEARCH_TOKEN",
+        },
+      });
+      expect(plan.structuredContent?.recommendedFirstTool).toBe("index.ensure");
 
       await client.callTool({
         name: "index.ensure",

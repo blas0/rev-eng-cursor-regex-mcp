@@ -1,10 +1,11 @@
-## rev-eng-cursor-regex-mcp Usage
+## rev-eng-cursor-regex-mcp Guardrails
 
+Use `rev-eng-cursor-regex-mcp://docs/decision-tree` as the canonical search policy.
+Call `search.plan` first for reverse engineering, locating occurrences, grep-like work, and scoped repo search.
+If `mustEnsureIndex` is true, call `index.ensure`.
+Follow `recommendedSequence` exactly.
 Use `search.literal` for exact identifiers, constants, env vars, filenames, and fixed strings.
-Use `search.regex` only when you need real regex syntax.
-Call `index.ensure` once at the start of a workspace session and again after large edit bursts, branch changes, or if search reports stale index state.
-Call `query.explain` before broad regexes that use alternation, character classes, or heavy quantifiers.
-Pass `pathGlobs` whenever you already know the subsystem, package, or folder you care about.
-If `search.regex` reports `plannerMode: full-scan-fallback`, narrow the pattern before retrying.
-Use `document.inspect_terms` only for debugging how the index tokenizes content or why a query plans poorly.
-Do not call `index.clear` unless the local cache is stale, corrupt, or you are explicitly resetting the index.
+Use `query.explain` before broad or uncertain regexes, then use `search.regex`.
+If `plannerMode: full-scan-fallback` or `requiresFullScan: true`, narrow the pattern and add `pathGlobs`.
+Use `document.inspect_terms` only for debugging poor plans or tokenization behavior.
+Do not fall back to shell `rg` / `grep` / `fd` / `find` unless MCP results are insufficient or the task is an exact known-path lookup.

@@ -3,6 +3,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { inspectTerms } from "../../core/query/termInspection.js";
 import { RuntimeConfig } from "../../core/shared/types.js";
+import { inspectTermsResultSchema } from "../schemas.js";
 
 function result<T extends object>(output: T): CallToolResult {
   return {
@@ -30,6 +31,7 @@ export function registerDocumentInspectTermsTool(
         mode: z.enum(["sparse", "trigram", "masked-trigram"]).describe("Choose the tokenization mode to inspect."),
         maxTerms: z.number().int().positive().optional().describe("Maximum number of emitted terms to return. Defaults to 256.")
       },
+      outputSchema: inspectTermsResultSchema,
       annotations: {
         readOnlyHint: true,
         openWorldHint: false,

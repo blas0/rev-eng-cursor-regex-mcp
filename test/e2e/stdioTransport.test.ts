@@ -13,7 +13,7 @@ const tsxPath = path.join(path.dirname(tsxPackageJsonPath), "./dist/cli.mjs");
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
 describe("stdio MCP transport", () => {
-  it("lists tools and performs a literal search", async () => {
+  it("lists tools, offers prompt completion, and performs workflow-planned search", async () => {
     const workspace = await createTempWorkspace("rev-eng-cursor-regex-mcp-stdio");
     await fs.writeFile(path.join(workspace, "sample.txt"), "HELLO_WORLD\n", "utf8");
 
@@ -34,7 +34,33 @@ describe("stdio MCP transport", () => {
 
     await client.connect(transport);
     const toolList = await client.listTools();
+    const promptCompletion = await client.complete({
+      ref: {
+        type: "ref/prompt",
+        name: "investigate-with-rev-eng-cursor-regex-mcp",
+      },
+      argument: {
+        name: "intent",
+        value: "re",
+      },
+    });
     expect(toolList.tools.some((tool) => tool.name === "search.regex")).toBe(true);
+    expect(toolList.tools.some((tool) => tool.name === "search.plan")).toBe(true);
+    expect(
+      toolList.tools.some(
+        (tool) => tool.name === "search.plan" && tool.outputSchema !== undefined,
+      ),
+    ).toBe(true);
+    expect(promptCompletion.completion.values).toContain("regex");
+
+    const plan = await client.callTool({
+      name: "search.plan",
+      arguments: {
+        workspaceRoot: workspace,
+        objective: "Find `HELLO_WORLD`",
+      },
+    });
+    expect(plan.structuredContent?.recommendedFirstTool).toBe("index.ensure");
 
     await client.callTool({
       name: "index.ensure",

@@ -3,6 +3,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { getIndexStatus } from "../../core/index/manager.js";
 import { RuntimeConfig } from "../../core/shared/types.js";
+import { indexStatusResponseSchema } from "../schemas.js";
 
 function result<T extends object>(output: T): CallToolResult {
   return {
@@ -27,6 +28,7 @@ export function registerIndexStatusTool(
       inputSchema: {
         workspaceRoot: z.string().optional().describe("Absolute workspace root to inspect. Defaults to the server workspace."),
       },
+      outputSchema: indexStatusResponseSchema,
       annotations: {
         readOnlyHint: true,
         openWorldHint: false,

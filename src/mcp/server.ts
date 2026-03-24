@@ -1,4 +1,5 @@
 import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { CompleteRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { RuntimeConfig } from "../core/shared/types.js";
 import { resolveRuntimeConfig } from "../core/shared/paths.js";
 import { registerIndexEnsureTool } from "./tools/indexEnsure.js";
@@ -8,8 +9,10 @@ import { registerSearchLiteralTool } from "./tools/searchLiteral.js";
 import { registerSearchRegexTool } from "./tools/searchRegex.js";
 import { registerQueryExplainTool } from "./tools/queryExplain.js";
 import { registerDocumentInspectTermsTool } from "./tools/documentInspectTerms.js";
+import { registerSearchPlanTool } from "./tools/searchPlan.js";
 import { readAlgorithmsResource } from "./resources/docsAlgorithms.js";
 import { readStorageResource } from "./resources/docsStorage.js";
+import { readDecisionTreeResource } from "./resources/docsDecisionTree.js";
 import { readUsagePlaybookResource } from "./resources/docsUsagePlaybook.js";
 import {
   listWorkspaceManifestResources,
@@ -19,9 +22,19 @@ import {
   listWorkspaceStatsResources,
   readWorkspaceStatsResource,
 } from "./resources/workspaceStats.js";
-import { getInvestigateWithRevEngCursorRegexMcpPrompt } from "./prompts/investigateWithRevEngCursorRegexMcp.js";
+import {
+  completeInvestigationIntent,
+  getInvestigateWithRevEngCursorRegexMcpPrompt,
+  investigateWithRevEngCursorRegexMcpArgsSchema,
+} from "./prompts/investigateWithRevEngCursorRegexMcp.js";
 import { getRefineRegexPatternPrompt } from "./prompts/refineRegexPattern.js";
 import * as z from "zod/v4";
+
+type CompletionAwareServer = {
+  _capabilities?: {
+    completions?: Record<string, never>;
+  };
+};
 
 /**
  * Create the fully registered rev-eng-cursor-regex-mcp server.
@@ -47,6 +60,7 @@ export function createRevEngCursorRegexMcpServer(
   registerIndexClearTool(server, config);
   registerSearchLiteralTool(server, config);
   registerSearchRegexTool(server, config);
+  registerSearchPlanTool(server, config);
   registerQueryExplainTool(server);
   registerDocumentInspectTermsTool(server, config);
 
@@ -70,6 +84,17 @@ export function createRevEngCursorRegexMcpServer(
       mimeType: "text/markdown",
     },
     readStorageResource,
+  );
+
+  server.registerResource(
+    "docs-decision-tree",
+    "rev-eng-cursor-regex-mcp://docs/decision-tree",
+    {
+      title: "Search Decision Tree",
+      description: "Canonical MCP-first search policy for exact-string, regex, fallback, and shell escape-hatch decisions.",
+      mimeType: "text/markdown",
+    },
+    readDecisionTreeResource,
   );
 
   server.registerResource(
@@ -123,10 +148,7 @@ export function createRevEngCursorRegexMcpServer(
     {
       title: "Investigate With rev-eng-cursor-regex-mcp",
       description: "Guide an agent through ensure, explain, search, and narrowing steps.",
-      argsSchema: {
-        objective: z.string().describe("What the agent is trying to investigate."),
-        suspectedPattern: z.string().optional().describe("Optional first-pass search pattern or identifier."),
-      },
+      argsSchema: investigateWithRevEngCursorRegexMcpArgsSchema,
     },
     getInvestigateWithRevEngCursorRegexMcpPrompt,
   );
@@ -143,6 +165,36 @@ export function createRevEngCursorRegexMcpServer(
     },
     getRefineRegexPatternPrompt,
   );
+
+  const internalServer = server.server as unknown as CompletionAwareServer;
+  if (!internalServer._capabilities?.completions) {
+    server.server.registerCapabilities({ completions: {} });
+    server.server.setRequestHandler(CompleteRequestSchema, async (request) => {
+      if (
+        request.params.ref.type === "ref/prompt" &&
+        request.params.ref.name === "investigate-with-rev-eng-cursor-regex-mcp" &&
+        request.params.argument.name === "intent"
+      ) {
+        const values = completeInvestigationIntent(
+          request.params.argument.value?.toString(),
+        );
+        return {
+          completion: {
+            values,
+            total: values.length,
+            hasMore: false,
+          },
+        };
+      }
+
+      return {
+        completion: {
+          values: [],
+          hasMore: false,
+        },
+      };
+    });
+  }
 
   return server;
 }

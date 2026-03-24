@@ -2,6 +2,7 @@ import path from "node:path";
 import { promises as fs } from "node:fs";
 import { discoverCorpus } from "../corpus/discoverFiles.js";
 import { buildBaseIndex, buildOverlayIndex } from "./builder.js";
+import { ensureIndexRootIgnored } from "./gitignore.js";
 import {
   clearIndexStorage,
   computeStoredByteSize,
@@ -61,6 +62,11 @@ export async function ensureIndex(
   const excludeGlobs = options.excludeGlobs ?? [];
   const refreshOverlay = options.refreshOverlay ?? true;
   const workspaceId = toSafeId("ws", toolOptions.workspaceRoot);
+  const gitignoreBootstrap = await ensureIndexRootIgnored({
+    workspaceRoot: toolOptions.workspaceRoot,
+    indexDir: toolOptions.indexDir,
+    bootstrapGitignore: options.bootstrapGitignore ?? true,
+  });
 
   const corpus = await discoverCorpus({
     workspaceRoot: toolOptions.workspaceRoot,
@@ -170,6 +176,9 @@ export async function ensureIndex(
     storageDir,
     trackedFileCount: baseDocs.length,
     overlayFileCount,
+    gitignorePath: gitignoreBootstrap.gitignorePath,
+    gitignoreEntry: gitignoreBootstrap.gitignoreEntry,
+    gitignoreUpdated: gitignoreBootstrap.gitignoreUpdated,
   };
 }
 
